@@ -3,15 +3,14 @@ const express = require('express');
 const axios = require('axios');
 
 const app = express();
-
 app.use(express.json());
 
-// Endpoint utama
+// Endpoint utama - FIXED
 app.get('/', (req, res) => {
   res.send('n8n Webhook Client - Gunakan POST /send-webhook untuk mengirim data');
 });
 
-// Endpoint untuk mengirim webhook
+// Endpoint untuk mengirim webhook - FIXED
 app.post('/send-webhook', async (req, res) => {
   try {
     const callbackUrl = process.env.VERCEL_URL 
@@ -43,11 +42,10 @@ app.post('/send-webhook', async (req, res) => {
   }
 });
 
-// Endpoint callback
+// Endpoint callback - FIXED
 app.post('/callback', (req, res) => {
   console.log('Callback received:', req.body);
   res.json({ status: 'callback received', data: req.body });
 });
 
-// Export sebagai Vercel Serverless Function
 module.exports = app;
