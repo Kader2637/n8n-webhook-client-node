@@ -3,7 +3,6 @@ const express = require('express');
 const axios = require('axios');
 
 const app = express();
-const port = process.env.PORT || 3000;
 
 app.use(express.json());
 
@@ -15,8 +14,9 @@ app.get('/', (req, res) => {
 // Endpoint untuk mengirim webhook
 app.post('/send-webhook', async (req, res) => {
   try {
-    const callbackUrl = process.env.CALLBACK_URL || 
-                       `${req.protocol}://${req.get('host')}/callback`;
+    const callbackUrl = process.env.VERCEL_URL 
+      ? `${process.env.VERCEL_URL}/callback`
+      : `${req.protocol}://${req.get('host')}/callback`;
     
     const payload = {
       message: req.body.message || "Halo, n8n",
@@ -49,12 +49,5 @@ app.post('/callback', (req, res) => {
   res.json({ status: 'callback received', data: req.body });
 });
 
-// Ekspor app untuk Vercel (PENTING!)
+// Export sebagai Vercel Serverless Function
 module.exports = app;
-
-// Hanya jalankan server jika tidak di Vercel
-if (process.env.VERCEL !== '1') {
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  });
-}
