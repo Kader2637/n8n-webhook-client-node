@@ -1,32 +1,60 @@
-export default function handler(req, res) {
+require('dotenv').config();
+const express = require('express');
+const axios = require('axios');
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+app.use(express.json());
+
+// Endpoint utama
+app.get('/', (req, res) => {
+  res.send('n8n Webhook Client - Gunakan POST /send-webhook untuk mengirim data');
+});
+
+// Endpoint untuk mengirim webhook
+app.post('/send-webhook', async (req, res) => {
   try {
-    // Hanya izinkan POST
-    if (req.method !== 'POST') {
-      return res.status(405).json({ error: 'Method Not Allowed' });
-    }
+    const callbackUrl = process.env.CALLBACK_URL || 
+                       `${req.protocol}://${req.get('host')}/callback`;
+    
+    const payload = {
+      message: req.body.message || "Halo, n8n",
+      callback: callbackUrl
+    };
 
-    // Pastikan Content-Type JSON
-    if (req.headers['content-type'] !== 'application/json') {
-      return res.status(400).json({ error: 'Invalid Content-Type. Must be application/json' });
-    }
+    const response = await axios.post(
+      'https://n8n.avataralabs.ai/webhook/test-webhook',
+      payload,
+      { headers: { 'Content-Type': 'application/json' } }
+    );
 
-    // Cek apakah body punya 'message'
-    if (!req.body || !req.body.message) {
-      return res.status(400).json({ error: 'Missing message in request body' });
-    }
-
-    console.log('✅ Callback received:', req.body);
-
-    res.status(200).json({
-      status: 'received',
-      data: req.body
+    res.json({
+      status: 'success',
+      data: response.data,
+      callbackUrl: callbackUrl
     });
-
   } catch (error) {
-    console.error('❌ Error handling callback:', error);
+    console.error('Error:', error);
     res.status(500).json({
-      error: 'Internal Server Error',
-      details: error.message
+      status: 'error',
+      message: error.message
     });
   }
+});
+
+// Endpoint callback
+app.post('/callback', (req, res) => {
+  console.log('Callback received:', req.body);
+  res.json({ status: 'callback received', data: req.body });
+});
+
+// Ekspor app untuk Vercel (PENTING!)
+module.exports = app;
+
+// Hanya jalankan server jika tidak di Vercel
+if (process.env.VERCEL !== '1') {
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+  });
 }
