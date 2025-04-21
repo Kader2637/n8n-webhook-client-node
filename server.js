@@ -2,33 +2,33 @@ const express = require('express');
 const axios = require('axios');
 const dotenv = require('dotenv');
 
-dotenv.config();
+dotenv.config(); // Memuat variabel lingkungan dari .env file
 
 const app = express();
 const port = process.env.PORT || 5000;
 
+// Middleware untuk meng-handle request body dalam format JSON
 app.use(express.json());
 
-app.post('/callback', (req, res) => {
-  const { message } = req.body;
-  console.log('Received callback:', message);
-  res.status(200).json({ message: 'Callback received!' });
-});
-
+// Route untuk menerima request webhook
 app.post('/send-webhook', async (req, res) => {
+  const webhookUrl = process.env.WEBHOOK_URL;  // URL webhook yang akan dituju
+
   try {
-    const response = await axios.post(process.env.WEBHOOK_URL, {
-      message: 'Hello, n8n',
-      callback: process.env.CALLBACK_URL,
-    });
-    console.log('Webhook response:', response.data);
-    res.status(200).send('Webhook sent successfully!');
+    const response = await axios.post(webhookUrl, req.body);  // Mengirim data ke webhook
+    res.status(200).json({ message: 'Webhook sent successfully', data: response.data });
   } catch (error) {
-    console.error('Error sending webhook:', error);
-    res.status(500).send('Error sending webhook');
+    res.status(500).json({ message: 'Failed to send webhook', error: error.message });
   }
 });
 
+// Route untuk callback dari n8n (callback URL)
+app.post('/callback', (req, res) => {
+  console.log('Callback received:', req.body);  // Log data yang diterima
+  res.status(200).json({ message: 'Hello Again!' });
+});
+
+// Mulai server
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server running on port ${port}`);
 });
