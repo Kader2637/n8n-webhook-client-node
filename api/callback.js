@@ -1,15 +1,8 @@
-const express = require('express');
-const app = express();
-const port = 3000;
-
-app.use(express.json());
-
-app.post('/callback', (req, res) => {
+export default function handler(req, res) {
+  if (req.method === 'POST') {
     console.log('Panggilan callback diterima:', req.body);
-    res.status(200).send('Callback diterima');
-  });
-  
-
-app.listen(port, () => {
-  console.log(`Server berjalan di http://localhost:${port}`);
-});
+    res.status(200).json({ message: 'Callback diterima' });
+  } else {
+    res.status(405).json({ error: 'Method Not Allowed' });
+  }
+}
