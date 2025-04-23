@@ -1,27 +1,37 @@
 const express = require('express');
+const bodyParser = require('body-parser');
+
 const app = express();
+const PORT = 3000;
 
-// Gunakan process.env.PORT untuk mendapatkan port yang disediakan oleh Vercel atau fallback ke 3000 untuk lokal
-const port = process.env.PORT || 3000;
+// Middleware
+app.use(bodyParser.json());
 
-app.use(express.json());
-
-app.post('/callback', (req, res) => {
-  const { message } = req.body;  // Mendapatkan 'message' dari body request
-
-  if (!message) {
-    return res.status(400).json({ error: 'Message is required' }); // Jika tidak ada pesan, return error
+app.post('/api/callback', (req, res) => {
+  console.log('Headers:', req.headers);
+  console.log('Raw Body:', req.body);
+  
+  // Validasi basic
+  if (!req.body) {
+      console.log('Tidak ada body diterima');
+      return res.status(400).send('Bad Request');
   }
 
-  console.log('Callback received:', message);
-
-  // Kirim kembali respons dengan 'message' yang diterima
-  res.json({
-    message: `Hello Again! Received your message: ${message}`,  // Respons dinamis
+  res.json({ 
+      status: 'received',
+      your_message: req.body.message 
   });
 });
 
-// Server berjalan pada port yang disediakan oleh Vercel atau port 3000 untuk lokal
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err.stack);
+    res.status(500).json({ error: 'Terjadi kesalahan internal' });
+});
+
+// Start Server
+app.listen(PORT, () => {
+    console.log(`\n🚀 Server callback berjalan di http://localhost:${PORT}`);
+    console.log(`🔔 Endpoint: http://localhost:${PORT}/api/callback`);
+    console.log('Menunggu callback dari n8n webhook...\n');
 });
