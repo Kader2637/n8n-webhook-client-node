@@ -1,26 +1,25 @@
 const express = require('express');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000; // Gunakan port yang disediakan oleh Vercel
 
 app.use(express.json());
 
-// Endpoint untuk menerima callback dari n8n webhook
 app.post('/callback', (req, res) => {
-  const { message } = req.body; // Mengambil pesan dari response yang dikirim oleh n8n
+  const { message } = req.body; // Mendapatkan 'message' dari body request
 
   if (!message) {
-    return res.status(400).json({ error: 'Message is required' });
+    return res.status(400).json({ error: 'Message is required' }); // Jika tidak ada pesan, return error
   }
 
   console.log('Callback received:', message);
 
-  // Menanggapi dengan pesan yang dikirim oleh n8n (bisa diubah sesuai kebutuhan)
+  // Kirim kembali respons dengan 'message' yang diterima
   res.json({
     message: `Hello Again! Received your message: ${message}`,
   });
 });
 
-// Menjalankan server
+// Server berjalan
 app.listen(port, () => {
   console.log(`Server running at http://localhost:${port}`);
 });
