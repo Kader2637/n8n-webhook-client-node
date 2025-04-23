@@ -1,54 +1,26 @@
 const express = require('express');
-const axios = require('axios');
-
 const app = express();
+const port = 3000;
+
 app.use(express.json());
 
-// Endpoint untuk mengirim data ke n8n webhook
-app.post('/send-webhook', async (req, res) => {
-  const { message, callback } = req.body;
+// Endpoint untuk menerima callback dari n8n webhook
+app.post('/callback', (req, res) => {
+  const { message } = req.body; // Mengambil pesan dari response yang dikirim oleh n8n
 
-  if (!message || !callback) {
-    return res.status(400).json({ error: 'Message dan callback harus disertakan' });
+  if (!message) {
+    return res.status(400).json({ error: 'Message is required' });
   }
 
-  try {
-    const webhookUrl = 'https://n8n.avataralabs.ai/webhook/test-webhook';
+  console.log('Callback received:', message);
 
-    const response = await axios.post(webhookUrl, {
-      message,
-      callback,
-    });
-
-    return res.json({
-      message: 'Webhook berhasil dikirim.',
-      response: response.data,
-    });
-  } catch (error) {
-    return res.status(500).json({ error: 'Gagal mengirim webhook', detail: error.message });
-  }
+  // Menanggapi dengan pesan yang dikirim oleh n8n (bisa diubah sesuai kebutuhan)
+  res.json({
+    message: `Hello Again! Received your message: ${message}`,
+  });
 });
 
-// Endpoint callback yang akan dipanggil oleh n8n
-app.post('/callback', (req, res) => {
-    const { message } = req.body;
-  
-    if (!message) {
-      return res.status(400).json({ error: 'Message is required' });
-    }
-  
-    console.log('Pesan callback diterima:', message);
-  
-    res.json({
-      message: `Hello Again! Pesanmu: ${message}`,
-    });
-  });
-  
-// Untuk lokal dan Vercel
-if (require.main === module) {
-  app.listen(3000, () => {
-    console.log('Server berjalan di http://localhost:3000');
-  });
-} else {
-  module.exports = app;
-}
+// Menjalankan server
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
