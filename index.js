@@ -1,60 +1,45 @@
-require('dotenv').config();
 const express = require('express');
 const axios = require('axios');
+const bodyParser = require('body-parser');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 3000;
 
-app.use(express.json());
+app.use(bodyParser.json());
 
-// Endpoint utama
-app.get('/', (req, res) => {
-  res.send('n8n Webhook Client - Gunakan POST /send-webhook untuk mengirim data');
-});
-
-// Endpoint untuk mengirim webhook
 app.post('/send-webhook', async (req, res) => {
+  const { message, callback } = req.body;
+
+  if (!message || !callback) {
+    return res.status(400).json({ error: 'Message or Callback is missing' });
+  }
+
   try {
-    const callbackUrl = process.env.CALLBACK_URL || 
-                       `${req.protocol}://${req.get('host')}/callback`;
-    
-    const payload = {
-      message: req.body.message || "Halo, n8n",
-      callback: callbackUrl
-    };
+    const webhookUrl = 'https://n8n.avataralabs.ai/webhook/test-webhook';
+    const payload = { message, callback };
 
-    const response = await axios.post(
-      'https://n8n.avataralabs.ai/webhook/test-webhook',
-      payload,
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+    const response = await axios.post(webhookUrl, payload, {
+      headers: { 'Content-Type': 'application/json' }
+    });
 
-    res.json({
-      status: 'success',
-      data: response.data,
-      callbackUrl: callbackUrl
+    console.log('Response from n8n:', response.data);
+
+    const callbackResponse = await axios.post(callback, {
+      message: response.data.message || 'No message from n8n'
+    });
+
+    console.log('Response from callback:', callbackResponse.data);
+
+    res.status(200).json({
+      message: 'Webhook sent successfully and callback received.',
+      callbackResponse: callbackResponse.data,
     });
   } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({
-      status: 'error',
-      message: error.message
-    });
+    console.error('Error occurred:', error.message);
+    res.status(500).json({ error: 'Failed to send webhook or callback' });
   }
 });
 
-// Endpoint callback
-app.post('/callback', (req, res) => {
-  console.log('Callback received:', req.body);
-  res.json({ status: 'callback received', data: req.body });
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
-
-// Ekspor app untuk Vercel (PENTING!)
-module.exports = app;
-
-// Hanya jalankan server jika tidak di Vercel
-if (process.env.VERCEL !== '1') {
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  });
-}
