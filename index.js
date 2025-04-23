@@ -31,19 +31,19 @@ app.post('/send-webhook', async (req, res) => {
 
 // Endpoint callback yang akan dipanggil oleh n8n
 app.post('/callback', (req, res) => {
-  const { message } = req.body;
-
-  if (!message) {
-    return res.status(400).json({ error: 'Message dari n8n tidak ditemukan' });
-  }
-
-  console.log('Pesan callback diterima:', message);
-
-  return res.json({
-    message: `Hello Again! Pesanmu: ${message}`,
+    const { message } = req.body;
+  
+    if (!message) {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+  
+    console.log('Pesan callback diterima:', message);
+  
+    res.json({
+      message: `Hello Again! Pesanmu: ${message}`,
+    });
   });
-});
-
+  
 // Untuk lokal dan Vercel
 if (require.main === module) {
   app.listen(3000, () => {
