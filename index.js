@@ -1,40 +1,54 @@
 const express = require('express');
 const axios = require('axios');
-const app = express();
-const port = 3000;
 
+const app = express();
 app.use(express.json());
 
+// Endpoint untuk mengirim data ke n8n webhook
 app.post('/send-webhook', async (req, res) => {
-  const { message, callback } = req.body;  // Mengambil data pesan dan callback dari body
+  const { message, callback } = req.body;
 
   if (!message || !callback) {
-    return res.status(400).json({ error: 'Message and callback are required' });
+    return res.status(400).json({ error: 'Message dan callback harus disertakan' });
   }
 
   try {
-    // Payload untuk mengirimkan data ke webhook n8n
-    const payload = {
-      message: message,  // Pesan dinamis dari input
-      callback: callback, // URL callback yang dinamis
-    };
+    const webhookUrl = 'https://n8n.avataralabs.ai/webhook/test-webhook';
 
-    const response = await axios.post('https://n8n.avataralabs.ai/webhook/test-webhook', payload, {
-      headers: { 'Content-Type': 'application/json' },
+    const response = await axios.post(webhookUrl, {
+      message,
+      callback,
     });
 
-    console.log('Webhook response:', response.data);
-
-    res.status(200).json({
-      message: 'Webhook berhasil dikirim dan callback diterima.',
-      callbackResponse: response.data,  // Menyimpan respons dari webhook n8n
+    return res.json({
+      message: 'Webhook berhasil dikirim.',
+      response: response.data,
     });
   } catch (error) {
-    console.error('Error sending webhook:', error);
-    res.status(500).json({ error: 'Failed to send webhook or callback' });
+    return res.status(500).json({ error: 'Gagal mengirim webhook', detail: error.message });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running at http://localhost:${port}`);
+// Endpoint callback yang akan dipanggil oleh n8n
+app.post('/callback', (req, res) => {
+  const { message } = req.body;
+
+  if (!message) {
+    return res.status(400).json({ error: 'Message dari n8n tidak ditemukan' });
+  }
+
+  console.log('Pesan callback diterima:', message);
+
+  return res.json({
+    message: `Hello Again! Pesanmu: ${message}`,
+  });
 });
+
+// Untuk lokal dan Vercel
+if (require.main === module) {
+  app.listen(3000, () => {
+    console.log('Server berjalan di http://localhost:3000');
+  });
+} else {
+  module.exports = app;
+}
