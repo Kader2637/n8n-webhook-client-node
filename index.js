@@ -1,41 +1,36 @@
 const express = require('express');
 const axios = require('axios');
-const bodyParser = require('body-parser');
-
 const app = express();
 const port = 3000;
 
-app.use(bodyParser.json());
+app.use(express.json());
 
 app.post('/send-webhook', async (req, res) => {
-  const { message, callback } = req.body;
+  const { message, callback } = req.body;  // Mengambil data pesan dan callback dari body
 
   if (!message || !callback) {
-    return res.status(400).json({ error: 'Message or Callback is missing' });
+    return res.status(400).json({ error: 'Message and callback are required' });
   }
 
   try {
-    const webhookUrl = 'https://n8n.avataralabs.ai/webhook/test-webhook';
-    const payload = { message, callback };
+    // Payload untuk mengirimkan data ke webhook n8n
+    const payload = {
+      message: message,  // Pesan dinamis dari input
+      callback: callback, // URL callback yang dinamis
+    };
 
-    const response = await axios.post(webhookUrl, payload, {
-      headers: { 'Content-Type': 'application/json' }
+    const response = await axios.post('https://n8n.avataralabs.ai/webhook/test-webhook', payload, {
+      headers: { 'Content-Type': 'application/json' },
     });
 
-    console.log('Response from n8n:', response.data);
-
-    const callbackResponse = await axios.post(callback, {
-      message: response.data.message || 'No message from n8n'
-    });
-
-    console.log('Response from callback:', callbackResponse.data);
+    console.log('Webhook response:', response.data);
 
     res.status(200).json({
-      message: 'Webhook sent successfully and callback received.',
-      callbackResponse: callbackResponse.data,
+      message: 'Webhook berhasil dikirim dan callback diterima.',
+      callbackResponse: response.data,  // Menyimpan respons dari webhook n8n
     });
   } catch (error) {
-    console.error('Error occurred:', error.message);
+    console.error('Error sending webhook:', error);
     res.status(500).json({ error: 'Failed to send webhook or callback' });
   }
 });
