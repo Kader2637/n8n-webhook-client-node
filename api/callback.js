@@ -5,25 +5,22 @@ const PORT = process.env.PORT || 3000;
 
 // Membuat server HTTP
 const server = http.createServer((req, res) => {
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.end(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>WebSocket Example</title>
-        </head>
-        <body>
-            <h1>Data yang diterima:</h1>
-            <pre id="data"></pre>
-            <script>
-                const ws = new WebSocket('ws://' + window.location.host);
-                ws.onmessage = function(event) {
-                    document.getElementById('data').textContent += event.data + '\\n';
-                };
-            </script>
-        </body>
-        </html>
-    `);
+    if (req.method === 'POST') {
+        let body = '';
+        
+        req.on('data', chunk => {
+            body += chunk.toString(); // Mengumpulkan data
+        });
+
+        req.on('end', () => {
+            const jsonResponse = JSON.stringify({ message: `Data yang diterima: ${body}` });
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(jsonResponse);
+        });
+    } else {
+        res.writeHead(404, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Endpoint tidak ditemukan' }));
+    }
 });
 
 // Membuat WebSocket server
@@ -34,10 +31,12 @@ wss.on('connection', (ws) => {
 
     ws.on('message', (message) => {
         console.log(`Pesan diterima: ${message}`);
-        // Kirim kembali pesan ke semua klien
+        
+        // Kirim kembali pesan dalam format JSON ke semua klien
+        const jsonResponse = JSON.stringify({ message: `Data yang diterima: ${message}` });
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(`Data yang diterima: ${message}`);
+                client.send(jsonResponse);
             }
         });
     });
