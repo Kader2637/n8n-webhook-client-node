@@ -3,13 +3,12 @@ const WebSocket = require('ws');
 
 const PORT = process.env.PORT || 3000;
 
-// Membuat server HTTP
 const server = http.createServer((req, res) => {
     if (req.method === 'POST') {
         let body = '';
         
         req.on('data', chunk => {
-            body += chunk.toString(); // Mengumpulkan data
+            body += chunk.toString();
         });
 
         req.on('end', () => {
@@ -23,7 +22,6 @@ const server = http.createServer((req, res) => {
     }
 });
 
-// Membuat WebSocket server
 const wss = new WebSocket.Server({ server });
 
 wss.on('connection', (ws) => {
@@ -32,7 +30,6 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         console.log(`Pesan diterima: ${message}`);
         
-        // Kirim kembali pesan dalam format JSON ke semua klien
         const jsonResponse = JSON.stringify({ message: `Data yang diterima: ${message}` });
         wss.clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
@@ -46,7 +43,6 @@ wss.on('connection', (ws) => {
     });
 });
 
-// Menjalankan server
 server.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
 });
